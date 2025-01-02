@@ -16,13 +16,14 @@ const Login = () => {
             return;
         }
 
+        // Валидация пароля
         if (password.length < 6 || !/\d/.test(password)) {
             alert('Пароль должен быть не менее 6 символов и содержать хотя бы одну цифру.');
             return;
         }
 
         try {
-            const response = await fetch('http://localhost:8000/login/', {
+            const response = await fetch('https://backend-for-uni.onrender.com/login/', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
