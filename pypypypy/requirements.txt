@@ -1,6 +1,0 @@
-fastapi
-uvicorn
-asyncpg
-pyjwt
-python-dotenv
-bcrypt 

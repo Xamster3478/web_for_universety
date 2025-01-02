@@ -14,7 +14,7 @@ const ProtectedPage = () => {
             return;
         }
 
-        fetch('http://localhost:8000/verify-token', {
+        fetch('https://backend-for-uni.onrender.com/verify-token', {
             headers: {
                 'Authorization': `Bearer ${token}`,
             },

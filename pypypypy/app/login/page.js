@@ -11,13 +11,11 @@ const Login = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        // Простая валидация
         if (!username || !password) {
             alert('Пожалуйста, введите имя пользователя и пароль.');
             return;
         }
 
-        // Валидация пароля
         if (password.length < 6 || !/\d/.test(password)) {
             alert('Пароль должен быть не менее 6 символов и содержать хотя бы одну цифру.');
             return;
@@ -37,7 +35,9 @@ const Login = () => {
             }
 
             const data = await response.json();
+            localStorage.setItem('token', data.access_token);
             console.log('Вход успешен:', data);
+            router.push('/protected');
         } catch (error) {
             console.error('Ошибка:', error);
         }
@@ -46,7 +46,6 @@ const Login = () => {
     const handleRegister = () => {
         router.push('/register');
     };
-
     return (
         <div className="min-h-screen flex items-center justify-center bg-gray-100">
             <div className="bg-white p-8 rounded-lg shadow-md w-96">
