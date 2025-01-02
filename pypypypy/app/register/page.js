@@ -25,7 +25,7 @@ const Register = () => {
         }
 
         try {
-            const response = await fetch('https://backend-for-uni.onrender.com/create-user/', {
+            const response = await fetch('https://backend-for-uni.onrender.com/api/create-user/', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
