@@ -1,4 +1,6 @@
 fastapi
 uvicorn
 asyncpg
-pyjwt 
+pyjwt
+python-dotenv
+bcrypt 
