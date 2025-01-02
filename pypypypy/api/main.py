@@ -1,10 +1,13 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import asyncpg
 import os
 from dotenv import load_dotenv
 import bcrypt  # Импортируем bcrypt для хеширования паролей
+import jwt
+from datetime import datetime, timedelta
+from fastapi.security import OAuth2PasswordBearer
 
 load_dotenv()  # Загружаем переменные окружения из файла .env
 
@@ -47,7 +50,6 @@ async def create_user(user: User):
         raise HTTPException(status_code=500, detail=str(e))
     finally:
         await conn.close()
-
 # Эндпоинт для логина
 @app.post("/login/")
 async def login(user: User):
@@ -58,8 +60,40 @@ async def login(user: User):
             user.username
         )
         if result and bcrypt.checkpw(user.password.encode('utf-8'), result['password'].encode('utf-8')):
-            return {"message": "Login successful", "user_id": result['id']}
+            token = create_access_token(data={"user_id": result['id']})
+            return {"access_token": token, "token_type": "bearer"}
         else:
             raise HTTPException(status_code=400, detail="Invalid credentials")
     finally:
         await conn.close()
+
+def create_access_token(data: dict, expires_delta: timedelta = None):
+    to_encode = data.copy()
+    if expires_delta:
+        expire = datetime.utcnow() + expires_delta
+    else:
+        expire = datetime.utcnow() + timedelta(minutes=15)
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(to_encode, "your_secret_key", algorithm="HS256")
+    return encoded_jwt
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
+@app.get("/verify-token/")
+async def verify_token_endpoint(token: str = Depends(oauth2_scheme)):
+    try:
+        payload = verify_token(token)
+        return {"user_id": payload.get("user_id")}
+    except HTTPException as e:
+        raise e
+
+SECRET_KEY = os.getenv("SECRET_KEY", "default_secret_key")
+
+def verify_token(token: str):
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        return payload
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token expired")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")

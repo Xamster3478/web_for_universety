@@ -39,6 +39,7 @@ const Register = () => {
 
             const data = await response.json();
             console.log('Регистрация успешна:', data);
+            router.push('/login');
         } catch (error) {
             console.error('Ошибка:', error);
         }
