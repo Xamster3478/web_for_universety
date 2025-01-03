@@ -1,4 +1,4 @@
-   // app/protected/layout.js
+'use client';
    import React from 'react';
 
    const ProtectedLayout = ({ children }) => {
