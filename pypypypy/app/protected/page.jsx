@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import TaskScheduler from './task-scheduler';
 
 const ProtectedPage = () => {
     const [user, setUser] = useState(null);
@@ -30,13 +31,18 @@ const ProtectedPage = () => {
     }, [router]);
 
     if (!user) {
-        return <p>Загрузка...</p>;
+        return (
+            <div className="flex justify-center items-center h-screen">
+                <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-blue-500"></div>
+            </div>
+        );
     }
 
     return (
         <div>
             <h1>Добро пожаловать, {user.username}!</h1>
             <p>Это защищенная страница.</p>
+            <TaskScheduler />
         </div>
     );
 };
