@@ -11,7 +11,6 @@ const Login = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        // Простая валидация
         if (!username || !password) {
             alert('Пожалуйста, введите имя пользователя и пароль.');
             return;
@@ -24,7 +23,7 @@ const Login = () => {
         }
 
         try {
-            const response = await fetch('http://localhost:8000/login/', {
+            const response = await fetch('https://backend-for-uni.onrender.com/api/login/', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -37,7 +36,9 @@ const Login = () => {
             }
 
             const data = await response.json();
+            localStorage.setItem('token', data.access_token);
             console.log('Вход успешен:', data);
+            router.push('/protected');
         } catch (error) {
             console.error('Ошибка:', error);
         }
@@ -46,7 +47,6 @@ const Login = () => {
     const handleRegister = () => {
         router.push('/register');
     };
-
     return (
         <div className="min-h-screen flex items-center justify-center bg-gray-100">
             <div className="bg-white p-8 rounded-lg shadow-md w-96">

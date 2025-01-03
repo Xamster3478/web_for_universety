@@ -25,7 +25,7 @@ const Register = () => {
         }
 
         try {
-            const response = await fetch('http://localhost:8000/create-user/', {
+            const response = await fetch('https://backend-for-uni.onrender.com/api/create-user/', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -39,6 +39,7 @@ const Register = () => {
 
             const data = await response.json();
             console.log('Регистрация успешна:', data);
+            router.push('/login');
         } catch (error) {
             console.error('Ошибка:', error);
         }
