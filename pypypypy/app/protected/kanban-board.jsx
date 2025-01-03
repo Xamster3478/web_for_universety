@@ -24,6 +24,7 @@ const KanbanBoard = () => {
   const [modalIsOpen, setModalIsOpen] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [newColumnName, setNewColumnName] = useState('');
+  const [addType, setAddType] = useState('task'); // New state to track what to add
 
   const onDragEnd = (result) => {
     if (!result.destination) return;
@@ -91,23 +92,22 @@ const KanbanBoard = () => {
         },
       });
       setNewColumnName('');
+      closeModal();
+    }
+  };
+
+  const handleAdd = () => {
+    if (addType === 'task') {
+      handleAddTask('todo');
+    } else if (addType === 'column') {
+      handleAddColumn();
     }
   };
 
   return (
     <div>
-      <button onClick={openModal} className="p-2 bg-blue-500 text-white rounded fixed top-4 left-4">
-        Добавить задачу
-      </button>
-      <input
-        type="text"
-        value={newColumnName}
-        onChange={(e) => setNewColumnName(e.target.value)}
-        placeholder="Название новой колонки"
-        className="border p-2 mb-4"
-      />
-      <button onClick={handleAddColumn} className="p-2 bg-green-500 text-white rounded ml-2">
-        Добавить колонку
+      <button onClick={openModal} className="p-2 bg-blue-500 text-white rounded fixed top-4 right-4">
+        Добавить
       </button>
       <DragDropContext onDragEnd={onDragEnd}>
         <div className="flex space-x-4 mt-4">
@@ -145,19 +145,50 @@ const KanbanBoard = () => {
       <Modal
         isOpen={modalIsOpen}
         onRequestClose={closeModal}
-        contentLabel="Добавить задачу"
+        contentLabel="Добавить элемент"
         className="bg-white p-6 rounded shadow-md max-w-md mx-auto mt-20"
         overlayClassName="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center"
       >
-        <h2 className="text-xl font-bold mb-4">Добавить новую задачу</h2>
-        <input
-          type="text"
-          value={newTaskTitle}
-          onChange={(e) => setNewTaskTitle(e.target.value)}
-          className="border p-2 w-full mb-4"
-          placeholder="Название задачи"
-        />
-        <button onClick={() => handleAddTask('todo')} className="p-2 bg-blue-500 text-white rounded">
+        <h2 className="text-xl font-bold mb-4">Добавить новый элемент</h2>
+        <div className="mb-4">
+          <label className="mr-2">
+            <input
+              type="radio"
+              value="task"
+              checked={addType === 'task'}
+              onChange={() => setAddType('task')}
+            />
+            Задача
+          </label>
+          <label className="ml-4">
+            <input
+              type="radio"
+              value="column"
+              checked={addType === 'column'}
+              onChange={() => setAddType('column')}
+            />
+            Колонка
+          </label>
+        </div>
+        {addType === 'task' && (
+          <input
+            type="text"
+            value={newTaskTitle}
+            onChange={(e) => setNewTaskTitle(e.target.value)}
+            className="border p-2 w-full mb-4"
+            placeholder="Название задачи"
+          />
+        )}
+        {addType === 'column' && (
+          <input
+            type="text"
+            value={newColumnName}
+            onChange={(e) => setNewColumnName(e.target.value)}
+            className="border p-2 w-full mb-4"
+            placeholder="Название новой колонки"
+          />
+        )}
+        <button onClick={handleAdd} className="p-2 bg-blue-500 text-white rounded">
           Добавить
         </button>
         <button onClick={closeModal} className="p-2 bg-gray-300 text-black rounded ml-2">
