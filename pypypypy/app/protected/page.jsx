@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import TaskScheduler from './task-scheduler';
+import KanbanBoard from './kanban-board';
 
 const ProtectedPage = () => {
     const [user, setUser] = useState(null);
@@ -40,9 +40,7 @@ const ProtectedPage = () => {
 
     return (
         <div>
-            <h1>Добро пожаловать, {user.username}!</h1>
-            <p>Это защищенная страница.</p>
-            <TaskScheduler />
+            <KanbanBoard />
         </div>
     );
 };
