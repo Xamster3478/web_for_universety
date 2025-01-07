@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { AddTask } from '../components/add-task';
-import { TaskList } from '../components/task-list';
+import { AddTask } from '../../components/add-task';
+import { TaskList } from '../../components/task-list';
 
 const TaskScheduler = () => {
   const [tasks, setTasks] = useState([]);
