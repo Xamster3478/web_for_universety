@@ -25,6 +25,7 @@ async function createTask(description, completed) {
     return data;
   } catch (error) {
     console.error('Ошибка:', error);
+    throw error;
   }
 }
 
@@ -75,6 +76,8 @@ async function deleteTask(taskId) {
 export default function TodoList() {
   const [todos, setTodos] = useState([]);
   const [newTodo, setNewTodo] = useState('');
+  const [isAdding, setIsAdding] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     const fetchTasks = async () => {
@@ -88,12 +91,23 @@ export default function TodoList() {
 
   const addTodo = async (e) => {
     e.preventDefault();
-    if (newTodo.trim() !== '') {
+    setError('');
+    if (newTodo.trim() === '') {
+      setError('Поле задания не может быть пустым.');
+      return;
+    }
+
+    setIsAdding(true);
+    try {
       const newTask = await createTask(newTodo, false);
       if (newTask) {
         setTodos(prevTodos => [...prevTodos, { id: newTask.id, text: newTask.description, completed: newTask.completed }]);
         setNewTodo('');
       }
+    } catch (err) {
+      setError('Не удалось добавить задачу. Пожалуйста, попробуйте еще раз.');
+    } finally {
+      setIsAdding(false);
     }
   };
 
@@ -104,9 +118,13 @@ export default function TodoList() {
   };
 
   const deleteTodo = async (id) => {
-    const deletedTask = await deleteTask(id);
-    if (deletedTask) {
-      setTodos(todos.filter(todo => todo.id !== id));
+    try {
+      const deletedTask = await deleteTask(id);
+      if (deletedTask) {
+        setTodos(todos.filter(todo => todo.id !== id));
+      }
+    } catch (err) {
+      console.error('Не удалось удалить задачу:', err);
     }
   };
 
@@ -120,14 +138,17 @@ export default function TodoList() {
           onChange={(e) => setNewTodo(e.target.value)}
           placeholder="Добавить новую задачу..."
           className="flex-grow p-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          disabled={isAdding}
         />
         <button
           type="submit"
-          className="bg-blue-500 text-white p-2 rounded-r-md hover:bg-blue-600 transition duration-200"
+          className={`bg-blue-500 text-white p-2 rounded-r-md hover:bg-blue-600 transition duration-200 ${isAdding ? 'opacity-50 cursor-not-allowed' : ''}`}
+          disabled={isAdding}
         >
-          <Plus size={24} />
+          {isAdding ? 'Добавление...' : <Plus size={24} />}
         </button>
       </form>
+      {error && <p className="text-red-500 mb-4">{error}</p>}
       <AnimatePresence>
         {todos.map(todo => (
           <motion.div
@@ -161,3 +182,4 @@ export default function TodoList() {
     </div>
   );
 }
+
