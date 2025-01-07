@@ -13,7 +13,7 @@ const Register = () => {
         e.preventDefault();
 
         // Простая валидация
-        if (!username || !password || !email) {
+        if (!username || !password) {
             alert('Пожалуйста, заполните все поля.');
             return;
         }
