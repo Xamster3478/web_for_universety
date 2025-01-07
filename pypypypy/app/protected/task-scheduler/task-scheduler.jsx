@@ -4,6 +4,74 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Trash2 } from 'lucide-react';
 
+async function createTask(description, completed) {
+  const token = localStorage.getItem('token');
+  try {
+    const response = await fetch('https://backend-for-uni.onrender.com/api/tasks/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({ description, completed }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Ошибка при создании задачи');
+    }
+
+    const data = await response.json();
+    console.log('Задача создана:', data);
+    return data;
+  } catch (error) {
+    console.error('Ошибка:', error);
+  }
+}
+
+async function getTasks() {
+  const token = localStorage.getItem('token');
+  try {
+    const response = await fetch('https://backend-for-uni.onrender.com/api/tasks/', {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Ошибка при получении задач');
+    }
+
+    const data = await response.json();
+    console.log('Полученные задачи:', data.tasks);
+    return data.tasks;
+  } catch (error) {
+    console.error('Ошибка:', error);
+  }
+}
+
+async function deleteTask(taskId) {
+  const token = localStorage.getItem('token');
+  try {
+    const response = await fetch(`https://backend-for-uni.onrender.com/api/tasks/${taskId}/`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Ошибка при удалении задачи');
+    }
+
+    const data = await response.json();
+    console.log('Задача удалена:', data);
+    return data;
+  } catch (error) {
+    console.error('Ошибка:', error);
+  }
+}
+
 export default function TodoList() {
   const [todos, setTodos] = useState([]);
   const [newTodo, setNewTodo] = useState('');

@@ -124,10 +124,10 @@ const ProtectedLayout = ({ children }) => {
                 isTasksOpen ? 'max-h-40' : 'max-h-0'
               }`}
             >
-              <Link href="/todo" className={`flex items-center px-4 py-2 text-gray-700 hover:bg-gray-200 ${pathname === '/todo' ? 'bg-gray-200' : ''}`}>
+              <Link href="protected/todo" className={`flex items-center px-4 py-2 text-gray-700 hover:bg-gray-200 ${pathname === '/todo' ? 'bg-gray-200' : ''}`}>
                 To-Do List
               </Link>
-              <Link href="/kanban" className={`flex items-center px-4 py-2 text-gray-700 hover:bg-gray-200 ${pathname === '/kanban' ? 'bg-gray-200' : ''}`}>
+              <Link href="protected/kanban" className={`flex items-center px-4 py-2 text-gray-700 hover:bg-gray-200 ${pathname === '/kanban' ? 'bg-gray-200' : ''}`}>
                 Kanban Доска
               </Link>
             </div>
