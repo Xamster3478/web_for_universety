@@ -2,201 +2,112 @@
 
 import React, { useState } from 'react';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
-import Modal from 'react-modal';
+import { Plus, MoreVertical } from 'lucide-react';
 
-const initialColumns = {
-  todo: {
-    name: 'To Do',
-    items: [],
-  },
-  inProgress: {
-    name: 'In Progress',
-    items: [],
-  },
-  done: {
-    name: 'Done',
-    items: [],
-  },
-};
-
-const KanbanBoard = () => {
-  const [columns, setColumns] = useState(initialColumns);
-  const [modalIsOpen, setModalIsOpen] = useState(false);
-  const [newTaskTitle, setNewTaskTitle] = useState('');
-  const [newColumnName, setNewColumnName] = useState('');
-  const [addType, setAddType] = useState('task'); // New state to track what to add
+export default function KanbanBoard() {
+  const [columns, setColumns] = useState([
+    { id: 'todo', title: 'To Do', tasks: [{ id: 'task1', content: 'Task 1' }] },
+    { id: 'inprogress', title: 'In Progress', tasks: [] },
+    { id: 'done', title: 'Done', tasks: [] },
+  ]);
 
   const onDragEnd = (result) => {
-    if (!result.destination) return;
-
     const { source, destination } = result;
-    const sourceColumn = columns[source.droppableId];
-    const destColumn = columns[destination.droppableId];
-    const sourceItems = [...sourceColumn.items];
-    const destItems = [...destColumn.items];
-    const [removed] = sourceItems.splice(source.index, 1);
+
+    if (!destination) return;
 
     if (source.droppableId === destination.droppableId) {
-      sourceItems.splice(destination.index, 0, removed);
-      setColumns({
-        ...columns,
-        [source.droppableId]: {
-          ...sourceColumn,
-          items: sourceItems,
-        },
-      });
+      const column = columns.find(col => col.id === source.droppableId);
+      if (column) {
+        const newTasks = Array.from(column.tasks);
+        const [reorderedItem] = newTasks.splice(source.index, 1);
+        newTasks.splice(destination.index, 0, reorderedItem);
+
+        const newColumns = columns.map(col =>
+          col.id === source.droppableId ? { ...col, tasks: newTasks } : col
+        );
+        setColumns(newColumns);
+      }
     } else {
-      destItems.splice(destination.index, 0, removed);
-      setColumns({
-        ...columns,
-        [source.droppableId]: {
-          ...sourceColumn,
-          items: sourceItems,
-        },
-        [destination.droppableId]: {
-          ...destColumn,
-          items: destItems,
-        },
-      });
+      const sourceColumn = columns.find(col => col.id === source.droppableId);
+      const destColumn = columns.find(col => col.id === destination.droppableId);
+      if (sourceColumn && destColumn) {
+        const sourceTasks = Array.from(sourceColumn.tasks);
+        const destTasks = Array.from(destColumn.tasks);
+        const [movedItem] = sourceTasks.splice(source.index, 1);
+        destTasks.splice(destination.index, 0, movedItem);
+
+        const newColumns = columns.map(col => {
+          if (col.id === source.droppableId) {
+            return { ...col, tasks: sourceTasks };
+          }
+          if (col.id === destination.droppableId) {
+            return { ...col, tasks: destTasks };
+          }
+          return col;
+        });
+        setColumns(newColumns);
+      }
     }
   };
 
-  const openModal = () => setModalIsOpen(true);
-  const closeModal = () => setModalIsOpen(false);
-
-  const handleAddTask = (columnId) => {
-    if (newTaskTitle.trim()) {
-      setColumns({
-        ...columns,
-        [columnId]: {
-          ...columns[columnId],
-          items: [
-            ...columns[columnId].items,
-            { id: Date.now().toString(), title: newTaskTitle },
-          ],
-        },
-      });
-      setNewTaskTitle('');
-      closeModal();
-    }
-  };
-
-  const handleAddColumn = () => {
-    if (newColumnName.trim()) {
-      const columnId = Date.now().toString();
-      setColumns({
-        ...columns,
-        [columnId]: {
-          name: newColumnName,
-          items: [],
-        },
-      });
-      setNewColumnName('');
-      closeModal();
-    }
-  };
-
-  const handleAdd = () => {
-    if (addType === 'task') {
-      handleAddTask('todo');
-    } else if (addType === 'column') {
-      handleAddColumn();
-    }
+  const addTask = (columnId) => {
+    const newTask = {
+      id: `task-${Date.now()}`,
+      content: `New Task ${Date.now()}`,
+    };
+    const newColumns = columns.map(col =>
+      col.id === columnId ? { ...col, tasks: [...col.tasks, newTask] } : col
+    );
+    setColumns(newColumns);
   };
 
   return (
-    <div>
-      <button onClick={openModal} className="p-2 bg-blue-500 text-white rounded fixed top-4 right-4">
-        Добавить
-      </button>
+    <div className="p-6 bg-gray-100 min-h-screen">
+      <h1 className="text-3xl font-bold mb-6 text-gray-800">Стильная Kanban Доска</h1>
       <DragDropContext onDragEnd={onDragEnd}>
-        <div className="flex space-x-4 mt-4">
-          {Object.entries(columns).map(([columnId, column]) => (
-            <Droppable key={columnId} droppableId={columnId}>
-              {(provided) => (
-                <div
-                  {...provided.droppableProps}
-                  ref={provided.innerRef}
-                  className="bg-gray-100 p-4 rounded w-1/3"
-                >
-                  <h2 className="text-xl font-bold mb-4">{column.name}</h2>
-                  {column.items.map((item, index) => (
-                    <Draggable key={item.id} draggableId={item.id} index={index}>
-                      {(provided) => (
-                        <div
-                          ref={provided.innerRef}
-                          {...provided.draggableProps}
-                          {...provided.dragHandleProps}
-                          className="bg-white p-2 mb-2 rounded shadow"
-                        >
-                          {item.title}
-                        </div>
-                      )}
-                    </Draggable>
-                  ))}
-                  {provided.placeholder}
-                </div>
-              )}
-            </Droppable>
+        <div className="flex space-x-4">
+          {columns.map(column => (
+            <div key={column.id} className="bg-gray-200 p-4 rounded-lg w-80">
+              <h2 className="text-lg font-semibold mb-4">{column.title}</h2>
+              <Droppable droppableId={column.id}>
+                {(provided) => (
+                  <div
+                    {...provided.droppableProps}
+                    ref={provided.innerRef}
+                    className="min-h-[200px]"
+                  >
+                    {column.tasks.map((task, index) => (
+                      <Draggable key={task.id} draggableId={task.id} index={index}>
+                        {(provided) => (
+                          <div
+                            ref={provided.innerRef}
+                            {...provided.draggableProps}
+                            {...provided.dragHandleProps}
+                            className="bg-white p-3 mb-2 rounded shadow-sm hover:shadow-md transition-shadow duration-200"
+                          >
+                            <div className="flex justify-between items-center">
+                              <span>{task.content}</span>
+                              <MoreVertical size={16} className="text-gray-500" />
+                            </div>
+                          </div>
+                        )}
+                      </Draggable>
+                    ))}
+                    {provided.placeholder}
+                  </div>
+                )}
+              </Droppable>
+              <button
+                onClick={() => addTask(column.id)}
+                className="mt-2 w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600 transition duration-200 flex items-center justify-center"
+              >
+                <Plus size={16} className="mr-1" /> Add Task
+              </button>
+            </div>
           ))}
         </div>
       </DragDropContext>
-
-      <Modal
-        isOpen={modalIsOpen}
-        onRequestClose={closeModal}
-        contentLabel="Добавить элемент"
-        className="bg-white p-6 rounded shadow-md max-w-md mx-auto mt-20"
-        overlayClassName="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center"
-      >
-        <h2 className="text-xl font-bold mb-4">Добавить новый элемент</h2>
-        <div className="mb-4">
-          <label className="mr-2">
-            <input
-              type="radio"
-              value="task"
-              checked={addType === 'task'}
-              onChange={() => setAddType('task')}
-            />
-            Задача
-          </label>
-          <label className="ml-4">
-            <input
-              type="radio"
-              value="column"
-              checked={addType === 'column'}
-              onChange={() => setAddType('column')}
-            />
-            Колонка
-          </label>
-        </div>
-        {addType === 'task' && (
-          <input
-            type="text"
-            value={newTaskTitle}
-            onChange={(e) => setNewTaskTitle(e.target.value)}
-            className="border p-2 w-full mb-4"
-            placeholder="Название задачи"
-          />
-        )}
-        {addType === 'column' && (
-          <input
-            type="text"
-            value={newColumnName}
-            onChange={(e) => setNewColumnName(e.target.value)}
-            className="border p-2 w-full mb-4"
-            placeholder="Название новой колонки"
-          />
-        )}
-        <button onClick={handleAdd} className="p-2 bg-blue-500 text-white rounded">
-          Добавить
-        </button>
-        <button onClick={closeModal} className="p-2 bg-gray-300 text-black rounded ml-2">
-          Отмена
-        </button>
-      </Modal>
     </div>
   );
-};
-
-export default KanbanBoard;
+}

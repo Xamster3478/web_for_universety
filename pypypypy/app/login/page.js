@@ -38,7 +38,7 @@ const Login = () => {
             const data = await response.json();
             localStorage.setItem('token', data.access_token);
             console.log('Вход успешен:', data);
-            router.push('/protected');
+            router.push('/protected/task-scheduler');
         } catch (error) {
             console.error('Ошибка:', error);
         }
