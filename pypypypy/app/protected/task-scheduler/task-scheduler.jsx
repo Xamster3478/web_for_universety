@@ -91,7 +91,7 @@ export default function TodoList() {
     if (newTodo.trim() !== '') {
       const newTask = await createTask(newTodo, false);
       if (newTask) {
-        setTodos([...todos, { id: newTask.id, text: newTask.description, completed: newTask.completed }]);
+        setTodos(prevTodos => [...prevTodos, { id: newTask.id, text: newTask.description, completed: newTask.completed }]);
         setNewTodo('');
       }
     }
