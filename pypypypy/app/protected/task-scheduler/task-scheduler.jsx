@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Trash2 } from 'lucide-react';
 
@@ -76,11 +76,24 @@ export default function TodoList() {
   const [todos, setTodos] = useState([]);
   const [newTodo, setNewTodo] = useState('');
 
-  const addTodo = (e) => {
+  useEffect(() => {
+    const fetchTasks = async () => {
+      const tasks = await getTasks();
+      if (tasks) {
+        setTodos(tasks.map(task => ({ id: task.id, text: task.description, completed: task.completed })));
+      }
+    };
+    fetchTasks();
+  }, []);
+
+  const addTodo = async (e) => {
     e.preventDefault();
     if (newTodo.trim() !== '') {
-      setTodos([...todos, { id: Date.now(), text: newTodo, completed: false }]);
-      setNewTodo('');
+      const newTask = await createTask(newTodo, false);
+      if (newTask) {
+        setTodos([...todos, { id: newTask.id, text: newTask.description, completed: newTask.completed }]);
+        setNewTodo('');
+      }
     }
   };
 
@@ -90,8 +103,11 @@ export default function TodoList() {
     ));
   };
 
-  const deleteTodo = (id) => {
-    setTodos(todos.filter(todo => todo.id !== id));
+  const deleteTodo = async (id) => {
+    const deletedTask = await deleteTask(id);
+    if (deletedTask) {
+      setTodos(todos.filter(todo => todo.id !== id));
+    }
   };
 
   return (
