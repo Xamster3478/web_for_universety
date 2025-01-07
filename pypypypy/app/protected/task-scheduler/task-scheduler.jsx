@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -101,7 +102,10 @@ export default function TodoList() {
     try {
       const newTask = await createTask(newTodo, false);
       if (newTask) {
-        setTodos(prevTodos => [...prevTodos, { id: newTask.id, text: newTask.description, completed: newTask.completed }]);
+        const tasks = await getTasks();
+        if (tasks) {
+          setTodos(tasks.map(task => ({ id: task.id, text: task.description, completed: task.completed })));
+        }
         setNewTodo('');
       }
     } catch (err) {
