@@ -98,7 +98,7 @@ const ProtectedLayout = ({ children }) => {
           )}
         </div>
         <nav className="mt-4">
-          <Link href="/" className={`flex items-center px-4 py-2 text-gray-700 hover:bg-gray-200 ${pathname === '/' ? 'bg-gray-200' : ''}`}>
+          <Link href="/protected" className={`flex items-center px-4 py-2 text-gray-700 hover:bg-gray-200 ${pathname === '/' ? 'bg-gray-200' : ''}`}>
             <Home className="mr-2" size={20} />
             Главная
           </Link>
