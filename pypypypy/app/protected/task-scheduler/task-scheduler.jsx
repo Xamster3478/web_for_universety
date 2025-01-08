@@ -165,7 +165,7 @@ export default function TodoList() {
 
   return (
     <div className="max-w-md mx-auto mt-10 p-6 bg-white rounded-lg shadow-lg">
-      <h1 className="text-3xl font-bold mb-6 text-gray-800">To Do List</h1>
+      <h1 className="text-3xl font-bold mb-6 text-gray-800">Планируйте свой день!</h1>
       <form onSubmit={addTodo} className="mb-4 flex">
         <input
           type="text"

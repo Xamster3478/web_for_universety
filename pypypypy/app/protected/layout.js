@@ -90,7 +90,7 @@ const ProtectedLayout = ({ children }) => {
         `}
       >
         <div className="flex justify-between items-center p-4">
-          <h1 className="text-2xl font-bold text-gray-800">МОЙ ОРГАНАЙЗЕР</h1>
+          <h1 className="text-2xl font-bold text-gray-800">Мой органайзер</h1>
           {!isDesktop && (
             <button onClick={toggleNav} className="md:hidden">
               <X size={24} />
@@ -142,7 +142,7 @@ const ProtectedLayout = ({ children }) => {
           <div className="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
-                {pathname === '/' ? 'Главная' : pathname === '/todo' ? 'To-Do List' : 'KANBAN BOARD'}
+              {pathname === '/protected' ? 'Главная' : pathname === '/protected/task-scheduler' ? 'To-Do List' : 'Kanban Доска'}
               </h2>
               {!isDesktop && (
                 <button onClick={toggleNav} className="md:hidden">
