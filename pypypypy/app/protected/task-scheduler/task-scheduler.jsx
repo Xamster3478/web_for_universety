@@ -73,8 +73,8 @@ async function deleteTask(taskId) {
   }
 }
 
-async function updateTask(taskId, completed) {
- const token = localStorage.getItem('token');
+async function updateTask(taskId, description, completed) {
+  const token = localStorage.getItem('token');
   try {
     const response = await fetch(`https://backend-for-uni.onrender.com/api/tasks/${taskId}/`, {
       method: 'PATCH',
@@ -82,10 +82,12 @@ async function updateTask(taskId, completed) {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`,
       },
-      body: JSON.stringify({ completed }),
+      body: JSON.stringify({ description, completed }),
     });
 
     if (!response.ok) {
+      const errorData = await response.json();
+      console.error('Ошибка при обновлении задачи:', errorData);
       throw new Error('Ошибка при обновлении задачи');
     }
 
@@ -142,7 +144,7 @@ export default function TodoList() {
     const todo = todos.find(todo => todo.id === id);
     if (todo) {
       console.log(`Обновление задачи: ${id}, текущее состояние: ${todo.completed}`);
-      const updatedTask = await updateTask(id, !todo.completed);
+      const updatedTask = await updateTask(id, todo.text, !todo.completed);
       if (updatedTask) {
         setTodos(todos.map(todo => 
           todo.id === id ? { ...todo, completed: !todo.completed } : todo
