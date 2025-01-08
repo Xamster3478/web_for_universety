@@ -90,7 +90,7 @@ const ProtectedLayout = ({ children }) => {
         `}
       >
         <div className="flex justify-between items-center p-4">
-          <h1 className="text-2xl font-bold text-gray-800">Мой Органайзер</h1>
+          <h1 className="text-2xl font-bold text-gray-800">МОЙ ОРГАНАЙЗЕР</h1>
           {!isDesktop && (
             <button onClick={toggleNav} className="md:hidden">
               <X size={24} />
