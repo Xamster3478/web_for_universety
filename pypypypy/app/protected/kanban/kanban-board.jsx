@@ -120,7 +120,7 @@ export default function KanbanBoard() {
     <div className="p-4 bg-gray-100 min-h-screen">
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-300">
-          <h1 className="text-3xl font-bold text-gray-800">Kanban Доска</h1>
+          <h1 className="text-3xl font-bold text-gray-800">Отслеживайте ваши достижения!</h1>
           <Dialog open={isAddColumnOpen} onOpenChange={setIsAddColumnOpen}>
             <DialogTrigger asChild>
               <Button variant="outline" className="bg-blue-500 text-white hover:bg-blue-600" onClick={() => setIsAddColumnOpen(true)}>
