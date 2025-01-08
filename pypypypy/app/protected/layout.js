@@ -98,7 +98,7 @@ const ProtectedLayout = ({ children }) => {
           )}
         </div>
         <nav className="mt-4">
-          <Link href="/" className={`flex items-center px-4 py-2 text-gray-700 hover:bg-gray-200 ${pathname === '/' ? 'bg-gray-200' : ''}`}>
+          <Link href="/protected" className={`flex items-center px-4 py-2 text-gray-700 hover:bg-gray-200 ${pathname === '/' ? 'bg-gray-200' : ''}`}>
             <Home className="mr-2" size={20} />
             Главная
           </Link>
@@ -142,7 +142,7 @@ const ProtectedLayout = ({ children }) => {
           <div className="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
-                {pathname === '/' ? 'Главная' : pathname === '/todo' ? 'To-Do List' : 'Kanban Доска'}
+                {pathname === '/protected' ? 'Главная' : pathname === '/protected/task-scheduler' ? 'To-Do List' : 'Kanban Доска'}
               </h2>
               {!isDesktop && (
                 <button onClick={toggleNav} className="md:hidden">
