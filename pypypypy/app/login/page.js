@@ -50,7 +50,7 @@ const Login = () => {
     return (
         <div className="min-h-screen flex items-center justify-center bg-gray-100">
             <div className="bg-white p-8 rounded-lg shadow-md w-96">
-                <h2 className="text-2xl font-bold mb-6 text-center text-gray-800">Вход в system</h2>
+                <h2 className="text-2xl font-bold mb-6 text-center text-gray-800">Вход</h2>
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div className="space-y-2">
                         <label className="block text-sm font-medium text-gray-700">Имя пользователя:</label>
