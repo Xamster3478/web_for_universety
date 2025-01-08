@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -74,6 +73,30 @@ async function deleteTask(taskId) {
   }
 }
 
+async function updateTask(taskId, completed) {
+ const token = localStorage.getItem('token');
+  try {
+    const response = await fetch(`https://backend-for-uni.onrender.com/api/tasks/${taskId}/`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({ completed }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Ошибка при обновлении задачи');
+    }
+
+    const data = await response.json();
+    console.log('Задача обновлена:', data);
+    return data;
+  } catch (error) {
+    console.error('Ошибка:', error);
+  }
+}
+
 export default function TodoList() {
   const [todos, setTodos] = useState([]);
   const [newTodo, setNewTodo] = useState('');
@@ -115,10 +138,18 @@ export default function TodoList() {
     }
   };
 
-  const toggleTodo = (id) => {
-    setTodos(todos.map(todo => 
-      todo.id === id ? { ...todo, completed: !todo.completed } : todo
-    ));
+  const toggleTodo = async (id) => {
+    const todo = todos.find(todo => todo.id === id);
+    if (todo) {
+      console.log(`Обновление задачи: ${id},текущее состояние: ${todo.completed}`);
+      const updatedTask = await updateTask(id, !todo.completed);
+      if (updatedTask) {
+        setTodos(todos.map(todo => 
+          todo.id === id ? { ...todo, completed: !todo.completed } : todo
+        ));
+        console.log(`Задача ${id} обновлена, новое состояние: ${!todo.completed}`);
+      }
+    }
   };
 
   const deleteTodo = async (id) => {
