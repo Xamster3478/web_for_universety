@@ -141,7 +141,7 @@ export default function TodoList() {
   const toggleTodo = async (id) => {
     const todo = todos.find(todo => todo.id === id);
     if (todo) {
-      console.log(`Обновление задачи: ${id},текущее состояние: ${todo.completed}`);
+      console.log(`Обновление задачи: ${id}, текущее состояние: ${todo.completed}`);
       const updatedTask = await updateTask(id, !todo.completed);
       if (updatedTask) {
         setTodos(todos.map(todo => 
