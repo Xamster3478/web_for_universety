@@ -27,6 +27,11 @@ export default function KanbanBoard() {
   const [editingColumn, setEditingColumn] = useState(null);
   const [activeColumn, setActiveColumn] = useState(null);
 
+  // Состояние для управления открытием диалога добавления колонки
+  const [isAddColumnOpen, setIsAddColumnOpen] = useState(false);
+  // Состояние для управления открытием диалога добавления задачи
+  const [activeTaskColumn, setActiveTaskColumn] = useState(null);
+
   const onDragEnd = (result) => {
     const { source, destination } = result;
 
@@ -68,17 +73,18 @@ export default function KanbanBoard() {
   };
 
   const addTask = () => {
-    if (newTaskContent.trim() !== '' && activeColumn) {
+    if (newTaskContent.trim() !== '' && activeTaskColumn) {
       const newTask = {
         id: `task-${Date.now()}`,
         content: newTaskContent,
       };
       const newColumns = columns.map(col =>
-        col.id === activeColumn ? { ...col, tasks: [...col.tasks, newTask] } : col
+        col.id === activeTaskColumn ? { ...col, tasks: [...col.tasks, newTask] } : col
       );
       setColumns(newColumns);
       setNewTaskContent('');
-      setActiveColumn(null);
+      // Закрываем диалог после добавления задачи
+      setActiveTaskColumn(null);
     }
   };
 
@@ -91,6 +97,8 @@ export default function KanbanBoard() {
       };
       setColumns([...columns, newColumn]);
       setNewColumnTitle('');
+      // Закрываем диалог после добавления колонки
+      setIsAddColumnOpen(false);
     }
   };
 
@@ -113,9 +121,9 @@ export default function KanbanBoard() {
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-300">
           <h1 className="text-3xl font-bold text-gray-800">Kanban Доска</h1>
-          <Dialog>
+          <Dialog open={isAddColumnOpen} onOpenChange={setIsAddColumnOpen}>
             <DialogTrigger asChild>
-              <Button variant="outline" className="bg-blue-500 text-white hover:bg-blue-600">
+              <Button variant="outline" className="bg-blue-500 text-white hover:bg-blue-600" onClick={() => setIsAddColumnOpen(true)}>
                 <Plus className="mr-2 h-4 w-4" /> Добавить колонку
               </Button>
             </DialogTrigger>
@@ -209,12 +217,12 @@ export default function KanbanBoard() {
                     </div>
                   )}
                 </Droppable>
-                <Dialog>
+                <Dialog open={activeTaskColumn === column.id} onOpenChange={(open) => open ? setActiveTaskColumn(column.id) : setActiveTaskColumn(null)}>
                   <DialogTrigger asChild>
                     <Button 
                       variant="outline" 
                       className="mt-2 w-full bg-green-500 text-white hover:bg-green-600"
-                      onClick={() => setActiveColumn(column.id)}
+                      onClick={() => setActiveTaskColumn(column.id)}
                     >
                       <Plus size={16} className="mr-1" /> Добавить задачу
                     </Button>
