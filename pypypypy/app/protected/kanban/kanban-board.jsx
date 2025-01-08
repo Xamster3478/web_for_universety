@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import { Plus, MoreVertical, Edit2 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
@@ -72,33 +72,74 @@ export default function KanbanBoard() {
     }
   };
 
-  const addTask = () => {
+  const addTask = async () => {
     if (newTaskContent.trim() !== '' && activeTaskColumn) {
-      const newTask = {
-        id: `task-${Date.now()}`,
-        content: newTaskContent,
-      };
-      const newColumns = columns.map(col =>
-        col.id === activeTaskColumn ? { ...col, tasks: [...col.tasks, newTask] } : col
-      );
-      setColumns(newColumns);
-      setNewTaskContent('');
-      // Закрываем диалог после добавления задачи
-      setActiveTaskColumn(null);
+      try {
+        const token = localStorage.getItem('token');
+        const taskData = { description: newTaskContent };
+        
+        // Логируем данные, которые отправляем на сервер
+        console.log('Отправляемые данные:', taskData);
+
+        const response = await fetch(`https://backend-for-uni.onrender.com/api/kanban/${activeTaskColumn}/tasks/`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(taskData)
+        });
+
+        if (!response.ok) {
+          throw new Error('Ошибка при создании задачи');
+        }
+
+        const newTask = {
+          id: `task-${Date.now()}`, // В реальном приложении используйте ID из ответа сервера
+          content: newTaskContent,
+        };
+        const newColumns = columns.map(col =>
+          col.id === activeTaskColumn ? { ...col, tasks: [...col.tasks, newTask] } : col
+        );
+        setColumns(newColumns);
+        setNewTaskContent('');
+        setActiveTaskColumn(null);
+      } catch (error) {
+        console.error('Ошибка:', error);
+      }
     }
   };
 
-  const addColumn = () => {
+  const addColumn = async () => {
+    const token = localStorage.getItem('token');
     if (newColumnTitle.trim() !== '') {
-      const newColumn = {
-        id: `column-${Date.now()}`,
-        title: newColumnTitle,
-        tasks: [],
-      };
-      setColumns([...columns, newColumn]);
-      setNewColumnTitle('');
-      // Закрываем диалог после добавления колонки
-      setIsAddColumnOpen(false);
+      try {
+
+        const response = await fetch('https://backend-for-uni.onrender.com/api/kanban/', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify({ name: newColumnTitle })
+        });
+
+        if (!response.ok) {
+          throw new Error('Ошибка при создании колонки');
+        }
+
+        const data = await response.json();
+        const newColumn = {
+          id: data.column_id,
+          title: newColumnTitle,
+          tasks: [],
+        };
+        setColumns([...columns, newColumn]);
+        setNewColumnTitle('');
+        setIsAddColumnOpen(false);
+      } catch (error) {
+        console.error('Ошибка:', error);
+      }
     }
   };
 
@@ -115,6 +156,55 @@ export default function KanbanBoard() {
     }
     setEditingColumn(null);
   };
+
+  const fetchColumns = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('https://backend-for-uni.onrender.com/api/kanban/', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Ошибка при получении колонок');
+      }
+
+      const data = await response.json();
+      setColumns(data.columns.map(col => ({ id: col.id, title: col.name, tasks: [] })));
+    } catch (error) {
+      console.error('Ошибка:', error);
+    }
+  };
+
+  const fetchTasks = async (columnId) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`https://backend-for-uni.onrender.com/api/kanban/${columnId}/tasks/`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Ошибка при получении задач');
+      }
+
+      const data = await response.json();
+      const newColumns = columns.map(col =>
+        col.id === columnId ? { ...col, tasks: data.tasks.map(task => ({ id: task.id, content: task.description })) } : col
+      );
+      setColumns(newColumns);
+    } catch (error) {
+      console.error('Ошибка:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchColumns();
+  }, []);
 
   return (
     <div className="p-4 bg-gray-100 min-h-screen">
