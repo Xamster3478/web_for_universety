@@ -123,7 +123,11 @@ export default function KanbanBoard() {
     if (newTaskContent.trim() === '' || !activeTaskColumn) return;
 
     try {
-      const data = await apiFetch(`/api/kanban/${activeTaskColumn}/tasks/`, 'POST', { description: newTaskContent });
+      const data = await apiFetch(`/api/kanban/${activeTaskColumn}/tasks/`, 'POST', { 
+        column_id: activeTaskColumn,
+        description: newTaskContent
+      });
+
       const newTask = { id: data.task_id, content: newTaskContent };
       setColumns(prev => ({
         ...prev,
