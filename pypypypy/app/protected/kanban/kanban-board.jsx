@@ -177,7 +177,18 @@ export default function KanbanBoard() {
 
   const deleteColumn = async (columnId) => {
     try {
+      // Получаем все задачи в колонке
+      const tasks = columns[columnId].tasks;
+
+      // Удаляем каждую задачу в колонке
+      for (const task of tasks) {
+        await apiFetch(`/api/kanban/${columnId}/tasks/${task.id}/`, 'DELETE');
+      }
+
+      // Удаляем саму колонку
       await apiFetch(`/api/kanban/${columnId}/`, 'DELETE');
+
+      // Обновляем состояние колонок на клиенте
       setColumns(prev => {
         const newColumns = { ...prev };
         delete newColumns[columnId];
