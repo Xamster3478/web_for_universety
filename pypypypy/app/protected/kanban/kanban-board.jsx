@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import { Plus, MoreVertical, Edit2 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,7 @@ export default function KanbanBoard() {
     { id: 'inprogress', title: 'In Progress', tasks: [] },
     { id: 'done', title: 'Done', tasks: [] },
   ]);
+  const previousColumnsRef = useRef(columns);
   const [newColumnTitle, setNewColumnTitle] = useState('');
   const [newTaskContent, setNewTaskContent] = useState('');
   const [editingColumn, setEditingColumn] = useState(null);
@@ -193,17 +194,71 @@ export default function KanbanBoard() {
       }
 
       const data = await response.json();
-      const newColumns = columns.map(col =>
-        col.id === columnId ? { ...col, tasks: data.tasks.map(task => ({ id: task.id, content: task.description })) } : col
-      );
-      setColumns(newColumns);
+      return data.tasks.map(task => ({ id: task.id, title: task.description }));
+    } catch (error) {
+      console.error('Ошибка:', error);
+      return [];
+    }
+  };
+
+  // Функция для отправки обновлений на сервер
+  const updateTaskPosition = async (columnId, taskId, newDescription) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`https://backend-for-uni.onrender.com/api/kanban/${columnId}/tasks/${taskId}/`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ description: newDescription })
+      });
+
+      if (!response.ok) {
+        throw new Error('Ошибка при обновлении задачи');
+      }
+
+      console.log('Задача обновлена успешно');
     } catch (error) {
       console.error('Ошибка:', error);
     }
   };
 
+  // Проверка изменений в положении задач
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const previousColumns = previousColumnsRef.current;
+      Object.entries(columns).forEach(([columnId, column]) => {
+        column.tasks.forEach((item, index) => {
+          const previousItem = previousColumns[columnId]?.tasks[index];
+          if (!previousItem || previousItem.id !== item.id) {
+            // Если задача изменила положение, отправляем обновление на сервер
+            updateTaskPosition(columnId, item.id, item.content);
+          }
+        });
+      });
+      previousColumnsRef.current = columns;
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [columns]);
+
   useEffect(() => {
     fetchColumns();
+  }, []);
+
+  // Получение задач при монтировании компонента
+  useEffect(() => {
+    const loadTasks = async () => {
+      const updatedColumns = { ...columns };
+      for (const columnId of Object.keys(updatedColumns)) {
+        const tasks = await fetchTasks(columnId);
+        updatedColumns[columnId].tasks = tasks;
+      }
+      setColumns(updatedColumns);
+    };
+
+    loadTasks();
   }, []);
 
   return (
