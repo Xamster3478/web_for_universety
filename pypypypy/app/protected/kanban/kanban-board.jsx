@@ -325,16 +325,16 @@ export default function KanbanBoard() {
                       <div className="flex items-center">
                         <button
                           onClick={() => setEditingColumn(column.id)}
-                          className="text-gray-500 hover:text-gray-700 mr-2"
+                          className="text-gray-500 hover:text-gray-700 mr-2 hover:cursor-pointer hover:bg-gray-100 rounded-full p-1 transition-all duration-300 ease-in-out hover:scale-110 hover:shadow-md"
                         >
                           <Edit2 size={16} />
                         </button>
-                        <button
-                          onClick={() => deleteColumn(column.id)}
-                          className="text-red-500 hover:text-red-700"
-                        >
+                        <button 
+                        onClick={() => deleteData(entry.id)} // Используем id для удаления
+                        className="text-red-500 hover:text-red-700 hover:cursor-pointer hover:bg-red-100 rounded-full p-1 transition-all duration-300 ease-in-out hover:scale-110 hover:shadow-md"
+                      >
                           <Trash2 size={16} />
-                        </button>
+                      </button>
                       </div>
                     </div>
                   )}

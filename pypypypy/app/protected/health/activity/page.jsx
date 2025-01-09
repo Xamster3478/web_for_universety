@@ -1,33 +1,88 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { format } from 'date-fns';
+import { Trash2 } from 'lucide-react';
 
-const initialData = [
-  { date: '2023-06-01', steps: 8000, calories: 300, activity: 'Ходьба' },
-  { date: '2023-06-02', steps: 10000, calories: 400, activity: 'Бег' },
-  { date: '2023-06-03', steps: 5000, calories: 200, activity: 'Плавание' },
-  { date: '2023-06-04', steps: 12000, calories: 500, activity: 'Ходьба' },
-  { date: '2023-06-05', steps: 7000, calories: 350, activity: 'Велосипед' },
-  { date: '2023-06-06', steps: 9000, calories: 380, activity: 'Ходьба' },
-  { date: '2023-06-07', steps: 11000, calories: 450, activity: 'Бег' },
-];
+
 
 const activityTypes = ['Ходьба', 'Бег', 'Плавание', 'Велосипед', 'Другое'];
 
 export default function ActivityPage() {
-  const [data, setData] = useState(initialData);
+  const [data, setData] = useState([]);
   const [newDate, setNewDate] = useState('');
   const [newSteps, setNewSteps] = useState('');
   const [newCalories, setNewCalories] = useState('');
   const [newActivity, setNewActivity] = useState('');
   const [customActivity, setCustomActivity] = useState('');
   const [chartType, setChartType] = useState('steps');
+
+  // Функция для получения токена из localStorage
+  const getToken = () => {
+    return localStorage.getItem('token'); // Замените 'authToken' на ключ, который вы используете для хранения токена
+  };
+
+  // Функция для получения данных с сервера
+  const fetchData = async () => {
+    try {
+      const response = await fetch('https://backend-for-uni.onrender.com/api/health/activity/', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${getToken()}`,
+        },
+      });
+      const result = await response.json();
+      setData(result.activity);
+    } catch (error) {
+      console.error('Ошибка при получении данных:', error);
+    }
+  };
+
+  // Функция для добавления новых данных на сервер
+  const addData = async (newEntry) => {
+    try {
+      const response = await fetch('https://backend-for-uni.onrender.com/api/health/activity/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${getToken()}`,
+        },
+        body: JSON.stringify(newEntry),
+      });
+      if (response.ok) {
+        fetchData(); // Обновляем данные после добавления
+      }
+    } catch (error) {
+      console.error('Ошибка при добавлении данных:', error);
+    }
+  };
+
+  // Функция для удаления данных с сервера
+  const deleteData = async (activityId) => {
+    try {
+      const response = await fetch(`https://backend-for-uni.onrender.com/api/health/activity/${activityId}/`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${getToken()}`,
+        },
+      });
+      if (response.ok) {
+        fetchData(); // Обновляем данные после удаления
+      }
+    } catch (error) {
+      console.error('Ошибка при удалении данных:', error);
+    }
+  };
+
+  // Вызов fetchData при загрузке компонента
+  useEffect(() => {
+    fetchData();
+  }, []);
 
   const handleAddData = (e) => {
     e.preventDefault();
@@ -39,7 +94,7 @@ export default function ActivityPage() {
         calories: parseInt(newCalories),
         activity: activityName
       };
-      setData([...data, newEntry]);
+      addData(newEntry);
       setNewDate('');
       setNewSteps('');
       setNewCalories('');
@@ -147,6 +202,7 @@ export default function ActivityPage() {
                   <th className="px-4 py-2 text-left">Шаги</th>
                   <th className="px-4 py-2 text-left">Калории</th>
                   <th className="px-4 py-2 text-left">Тип активности</th>
+                  <th className="px-4 py-2 text-left">Действия</th>
                 </tr>
               </thead>
               <tbody>
@@ -156,6 +212,14 @@ export default function ActivityPage() {
                     <td className="px-4 py-2">{entry.steps}</td>
                     <td className="px-4 py-2">{entry.calories} ккал</td>
                     <td className="px-4 py-2">{entry.activity}</td>
+                    <td className="px-4 py-2">
+                      <button 
+                        onClick={() => deleteData(entry.id)} // Используем id для удаления
+                        className="text-red-500 hover:text-red-700 hover:cursor-pointer hover:bg-red-100 rounded-full p-1 transition-all duration-300 ease-in-out hover:scale-110 hover:shadow-md"
+                      >
+                          <Trash2 size={16} />
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
