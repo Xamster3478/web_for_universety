@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Trash2 } from 'lucide-react';
+import LoadingSpinner from '@/components/loading-spinner';
 
 async function createTask(description, completed) {
   const token = localStorage.getItem('token');
@@ -48,6 +49,7 @@ async function getTasks() {
     return data.tasks;
   } catch (error) {
     console.error('Ошибка:', error);
+    throw error;
   }
 }
 
@@ -70,6 +72,7 @@ async function deleteTask(taskId) {
     return data;
   } catch (error) {
     console.error('Ошибка:', error);
+    throw error;
   }
 }
 
@@ -96,6 +99,7 @@ async function updateTask(taskId, description, completed) {
     return data;
   } catch (error) {
     console.error('Ошибка:', error);
+    throw error;
   }
 }
 
@@ -104,12 +108,20 @@ export default function TodoList() {
   const [newTodo, setNewTodo] = useState('');
   const [isAdding, setIsAdding] = useState(false);
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchTasks = async () => {
-      const tasks = await getTasks();
-      if (tasks) {
-        setTodos(tasks.map(task => ({ id: task.id, text: task.description, completed: task.completed })));
+      setIsLoading(true);
+      try {
+        const tasks = await getTasks();
+        if (tasks) {
+          setTodos(tasks.map(task => ({ id: task.id, text: task.description, completed: task.completed })));
+        }
+      } catch (error) {
+        setError('Не удалось загрузить задачи. Пожалуйста, попробуйте позже.');
+      } finally {
+        setIsLoading(false);
       }
     };
     fetchTasks();
@@ -175,47 +187,51 @@ export default function TodoList() {
           onChange={(e) => setNewTodo(e.target.value)}
           placeholder="Добавить новую задачу..."
           className="flex-grow p-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          disabled={isAdding}
+          disabled={isAdding || isLoading}
         />
         <button
           type="submit"
-          className={`bg-blue-500 text-white p-2 rounded-r-md hover:bg-blue-600 transition duration-200 ${isAdding ? 'opacity-50 cursor-not-allowed' : ''}`}
-          disabled={isAdding}
+          className={`bg-blue-500 text-white p-2 rounded-r-md hover:bg-blue-600 transition duration-200 ${(isAdding || isLoading) ? 'opacity-50 cursor-not-allowed' : ''}`}
+          disabled={isAdding || isLoading}
         >
           {isAdding ? 'Добавление...' : <Plus size={24} />}
         </button>
       </form>
       {error && <p className="text-red-500 mb-4">{error}</p>}
-      <AnimatePresence>
-        {todos.map(todo => (
-          <motion.div
-            key={todo.id}
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.2 }}
-            className="flex items-center justify-between p-3 mb-2 bg-gray-100 rounded-md"
-          >
-            <label className="flex items-center space-x-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={todo.completed}
-                onChange={() => toggleTodo(todo.id)}
-                className="form-checkbox h-5 w-5 text-blue-500 rounded focus:ring-blue-500"
-              />
-              <span className={`${todo.completed ? 'line-through text-gray-500' : 'text-gray-800'}`}>
-                {todo.text}
-              </span>
-            </label>
-            <button
-              onClick={() => deleteTodo(todo.id)}
-              className="text-red-500 hover:text-red-700 transition duration-200"
+      {isLoading ? (
+        <LoadingSpinner />
+      ) : (
+        <AnimatePresence>
+          {todos.map(todo => (
+            <motion.div
+              key={todo.id}
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.2 }}
+              className="flex items-center justify-between p-3 mb-2 bg-gray-100 rounded-md"
             >
-              <Trash2 size={20} />
-            </button>
-          </motion.div>
-        ))}
-      </AnimatePresence>
+              <label className="flex items-center space-x-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={todo.completed}
+                  onChange={() => toggleTodo(todo.id)}
+                  className="form-checkbox h-5 w-5 text-blue-500 rounded focus:ring-blue-500"
+                />
+                <span className={`${todo.completed ? 'line-through text-gray-500' : 'text-gray-800'}`}>
+                  {todo.text}
+                </span>
+              </label>
+              <button
+                onClick={() => deleteTodo(todo.id)}
+                className="text-red-500 hover:text-red-700 transition duration-200"
+              >
+                <Trash2 size={20} />
+              </button>
+            </motion.div>
+          ))}
+        </AnimatePresence>
+      )}
     </div>
   );
 }
