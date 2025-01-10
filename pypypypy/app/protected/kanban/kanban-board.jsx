@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
-import { Plus, MoreVertical, Edit2, Trash2 } from 'lucide-react';
+import { Plus, MoreVertical, Edit2 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -15,20 +15,17 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import LoadingSpinner from '@/components/loading-spinner';
 
 // Центральная функция для выполнения API запросов
 const apiFetch = async (url, method = 'GET', body = null) => {
   const token = localStorage.getItem('token');
   const headers = {
     'Authorization': `Bearer ${token}`,
-    'Content-Type': 'application/json',
   };
+  if (body) {
+    headers['Content-Type'] = 'application/json';
+  }
 
   try {
     const response = await fetch(`https://backend-for-uni.onrender.com${url}`, {
@@ -51,71 +48,58 @@ const apiFetch = async (url, method = 'GET', body = null) => {
 
 export default function KanbanBoard() {
   const [columns, setColumns] = useState({});
+  const previousColumnsRef = useRef(columns);
   const [newColumnTitle, setNewColumnTitle] = useState('');
   const [newTaskContent, setNewTaskContent] = useState('');
   const [editingColumn, setEditingColumn] = useState(null);
   const [isAddColumnOpen, setIsAddColumnOpen] = useState(false);
   const [activeTaskColumn, setActiveTaskColumn] = useState(null);
   const [error, setError] = useState(null);
-  const [isDragging, setIsDragging] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const fetchColumnsAndTasks = useCallback(async () => {
+  // Функция для обновления позиции задачи на сервере
+  const updateTaskPosition = async (columnId, taskId, content) => {
     try {
-      const data = await apiFetch('/api/kanban/', 'GET');
-      const fetchedColumns = {};
-      for (const col of data.columns) {
-        fetchedColumns[col.id] = { id: col.id, title: col.name, tasks: [] };
-        const tasksData = await apiFetch(`/api/kanban/${col.id}/tasks/`, 'GET');
-        fetchedColumns[col.id].tasks = tasksData.tasks.map(task => ({ id: task.id, content: task.description }));
-      }
-      setColumns(fetchedColumns);
+      await apiFetch(`/api/kanban/${columnId}/tasks/${taskId}/`, 'PATCH', { description: content });
+      console.log(`Позиция задачи ${taskId} обновлена успешно`);
     } catch (error) {
       setError(error.message);
     }
-  }, []);
+  };
 
-  useEffect(() => {
-    fetchColumnsAndTasks();
-  }, [fetchColumnsAndTasks]);
+  const onDragEnd = async (result) => {
+    const { source, destination } = result;
 
-  const finishEditingColumn = async (columnId, newTitle, taskId, newDescription, newColumnId) => {
-    if (newDescription.trim() === '') return;
+    if (!destination) return;
 
+    const sourceColumn = columns[source.droppableId];
+    const destColumn = columns[destination.droppableId];
+    const sourceTasks = Array.from(sourceColumn.tasks);
+    const destTasks = Array.from(destColumn.tasks);
+    let updatedColumns = { ...columns };
+
+    if (source.droppableId === destination.droppableId) {
+      const [movedTask] = sourceTasks.splice(source.index, 1);
+      sourceTasks.splice(destination.index, 0, movedTask);
+      updatedColumns[source.droppableId].tasks = sourceTasks;
+    } else {
+      const [movedTask] = sourceTasks.splice(source.index, 1);
+      destTasks.splice(destination.index, 0, movedTask);
+      updatedColumns[source.droppableId].tasks = sourceTasks;
+      updatedColumns[destination.droppableId].tasks = destTasks;
+    }
+
+    setColumns(updatedColumns);
+
+    // Обновление позиций на сервере
     try {
-      console.log('Отправка данных:', {
-        column_id: newColumnId,
-        description: newDescription
-      });
-
-      await apiFetch(`/api/kanban/${columnId}/tasks/${taskId}/`, 'PATCH', { 
-        column_id: newColumnId,
-        description: newDescription
-      });
-      
-      setColumns(prev => {
-        const updatedColumns = { ...prev };
-
-        if (columnId !== newColumnId) {
-          const taskIndex = updatedColumns[columnId].tasks.findIndex(task => task.id === taskId);
-          const [movedTask] = updatedColumns[columnId].tasks.splice(taskIndex, 1);
-
-          movedTask.description = newDescription;
-          movedTask.column_id = newColumnId;
-
-          updatedColumns[newColumnId].tasks.push(movedTask);
-        } else {
-          const task = updatedColumns[columnId].tasks.find(task => task.id === taskId);
-          if (task) {
-            task.description = newDescription;
-          }
+      for (const columnId of Object.keys(updatedColumns)) {
+        for (const task of updatedColumns[columnId].tasks) {
+          await updateTaskPosition(columnId, task.id, task.content);
         }
-
-        return updatedColumns;
-      });
-
-      setEditingColumn(null);
-    } catch (error) {
-      setError(error.message);
+      }
+    } catch (err) {
+      console.error('Ошибка при обновлении позиций задач:', err);
     }
   };
 
@@ -123,11 +107,7 @@ export default function KanbanBoard() {
     if (newTaskContent.trim() === '' || !activeTaskColumn) return;
 
     try {
-      const data = await apiFetch(`/api/kanban/${activeTaskColumn}/tasks/`, 'POST', { 
-        column_id: activeTaskColumn,
-        description: newTaskContent
-      });
-
+      const data = await apiFetch(`/api/kanban/${activeTaskColumn}/tasks/`, 'POST', { description: newTaskContent });
       const newTask = { id: data.task_id, content: newTaskContent };
       setColumns(prev => ({
         ...prev,
@@ -160,99 +140,53 @@ export default function KanbanBoard() {
     }
   };
 
-  const deleteTask = async (columnId, taskId) => {
+  const startEditingColumn = (columnId) => {
+    setEditingColumn(columnId);
+  };
+
+  const finishEditingColumn = async (columnId, newTitle) => {
+    if (newTitle.trim() === '') return;
+
     try {
-      await apiFetch(`/api/kanban/${columnId}/tasks/${taskId}/`, 'DELETE');
+      await apiFetch(`/api/kanban/${columnId}/`, 'PATCH', { name: newTitle });
       setColumns(prev => ({
         ...prev,
         [columnId]: {
           ...prev[columnId],
-          tasks: prev[columnId].tasks.filter(task => task.id !== taskId),
+          title: newTitle,
         },
       }));
+      setEditingColumn(null);
     } catch (error) {
       setError(error.message);
     }
   };
 
-  const deleteColumn = async (columnId) => {
+  const fetchColumnsAndTasks = useCallback(async () => {
+    setIsLoading(true);
     try {
-      // Получаем все задачи в колонке
-      const tasks = columns[columnId].tasks;
-
-      // Удаляем каждую задачу в колонке
-      for (const task of tasks) {
-        await apiFetch(`/api/kanban/${columnId}/tasks/${task.id}/`, 'DELETE');
+      const data = await apiFetch('/api/kanban/', 'GET');
+      const fetchedColumns = {};
+      for (const col of data.columns) {
+        fetchedColumns[col.id] = { id: col.id, title: col.name, tasks: [] };
+        const tasksData = await apiFetch(`/api/kanban/${col.id}/tasks/`, 'GET');
+        fetchedColumns[col.id].tasks = tasksData.tasks.map(task => ({ id: task.id, content: task.description }));
       }
-
-      // Удаляем саму колонку
-      await apiFetch(`/api/kanban/${columnId}/`, 'DELETE');
-
-      // Обновляем состояние колонок на клиенте
-      setColumns(prev => {
-        const newColumns = { ...prev };
-        delete newColumns[columnId];
-        return newColumns;
-      });
+      setColumns(fetchedColumns);
     } catch (error) {
       setError(error.message);
+    } finally {
+      setIsLoading(false);
     }
-  };
-
-  const onDragEnd = useCallback(async (result) => {
-    setIsDragging(false);
-    const { source, destination } = result;
-
-    if (!destination) return;
-
-    const sourceColumn = columns[source.droppableId];
-    const destColumn = columns[destination.droppableId];
-    
-    if (!sourceColumn || !destColumn) return;
-
-    const sourceTasks = Array.from(sourceColumn.tasks);
-    const destTasks = Array.from(destColumn.tasks);
-    let updatedColumns = { ...columns };
-
-    if (source.droppableId === destination.droppableId) {
-      const [movedTask] = sourceTasks.splice(source.index, 1);
-      sourceTasks.splice(destination.index, 0, movedTask);
-      updatedColumns[source.droppableId] = {
-        ...sourceColumn,
-        tasks: sourceTasks
-      };
-    } else {
-      const [movedTask] = sourceTasks.splice(source.index, 1);
-      destTasks.splice(destination.index, 0, movedTask);
-      updatedColumns[source.droppableId] = {
-        ...sourceColumn,
-        tasks: sourceTasks
-      };
-      updatedColumns[destination.droppableId] = {
-        ...destColumn,
-        tasks: destTasks
-      };
-    }
-
-    setColumns(updatedColumns);
-
-    try {
-      for (const columnId of Object.keys(updatedColumns)) {
-        for (const task of updatedColumns[columnId].tasks) {
-          await apiFetch(`/api/kanban/${columnId}/tasks/${task.id}/`, 'PATCH', { 
-            column_id: columnId,
-            description: task.content
-          });
-        }
-      }
-    } catch (err) {
-      console.error('Ошибка при обновлении позиций задач:', err);
-    }
-  }, [columns]);
-
-  const onDragStart = useCallback(() => {
-    setIsDragging(true);
   }, []);
+
+  useEffect(() => {
+    fetchColumnsAndTasks();
+  }, []);
+
+  if (isLoading) {
+    return <LoadingSpinner />;
+  }
 
   return (
     <div className="p-4 bg-gray-100 min-h-screen">
@@ -276,7 +210,7 @@ export default function KanbanBoard() {
               <div className="grid gap-4 py-4">
                 <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="name" className="text-right">
-                    Название
+                    Назва��ие
                   </Label>
                   <Input
                     id="name"
@@ -287,14 +221,12 @@ export default function KanbanBoard() {
                 </div>
               </div>
               <DialogFooter>
-                <Button onClick={addColumn} className="bg-blue-500 text-white hover:bg-blue-600">
-                  Добавить колонку
-                </Button>
+                <Button onClick={addColumn} className="bg-blue-500 text-white hover:bg-blue-600">Добавить колонку</Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
         </div>
-        <DragDropContext onDragEnd={onDragEnd} onDragStart={onDragStart}>
+        <DragDropContext onDragEnd={onDragEnd}>
           <div className="flex flex-col md:flex-row md:space-x-4 space-y-4 md:space-y-0 overflow-x-auto pb-4">
             {Object.values(columns).map((column) => (
               <div key={column.id} className="bg-white p-4 rounded-lg shadow-md w-full md:w-80 flex-shrink-0">
@@ -310,10 +242,10 @@ export default function KanbanBoard() {
                           [column.id]: { ...prev[column.id], title: newTitle },
                         }));
                       }}
-                      onBlur={() => finishEditingColumn(column.id, column.title, column.tasks[0].id, column.tasks[0].description, column.id)}
+                      onBlur={() => finishEditingColumn(column.id, column.title)}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') {
-                          finishEditingColumn(column.id, column.title, column.tasks[0].id, column.tasks[0].description, column.id);
+                          finishEditingColumn(column.id, column.title);
                         }
                       }}
                       className="w-full p-2 rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -322,20 +254,12 @@ export default function KanbanBoard() {
                   ) : (
                     <div className="flex justify-between items-center">
                       <h2 className="text-lg font-semibold text-gray-700">{column.title}</h2>
-                      <div className="flex items-center">
-                        <button
-                          onClick={() => setEditingColumn(column.id)}
-                          className="text-gray-500 hover:text-gray-700 mr-2 hover:cursor-pointer hover:bg-gray-100 rounded-full p-1 transition-all duration-300 ease-in-out hover:scale-110 hover:shadow-md"
-                        >
-                          <Edit2 size={16} />
-                        </button>
-                        <button 
-                        onClick={() => deleteData(entry.id)} // Используем id для удаления
-                        className="text-red-500 hover:text-red-700 hover:cursor-pointer hover:bg-red-100 rounded-full p-1 transition-all duration-300 ease-in-out hover:scale-110 hover:shadow-md"
+                      <button
+                        onClick={() => startEditingColumn(column.id)}
+                        className="text-gray-500 hover:text-gray-700"
                       >
-                          <Trash2 size={16} />
+                        <Edit2 size={16} />
                       </button>
-                      </div>
                     </div>
                   )}
                 </div>
@@ -347,12 +271,7 @@ export default function KanbanBoard() {
                       className="min-h-[200px]"
                     >
                       {column.tasks.map((task, index) => (
-                        <Draggable 
-                          key={task.id} 
-                          draggableId={task.id.toString()} 
-                          index={index}
-                          isDragDisabled={isDragging}
-                        >
+                        <Draggable key={task.id} draggableId={task.id} index={index}>
                           {(provided) => (
                             <div
                               ref={provided.innerRef}
@@ -362,19 +281,7 @@ export default function KanbanBoard() {
                             >
                               <div className="flex justify-between items-center">
                                 <span className="text-gray-700">{task.content}</span>
-                                <DropdownMenu>
-                                  <DropdownMenuTrigger asChild>
-                                    <button className="text-gray-400 hover:text-gray-600">
-                                      <MoreVertical size={16} />
-                                    </button>
-                                  </DropdownMenuTrigger>
-                                  <DropdownMenuContent>
-                                    <DropdownMenuItem onClick={() => deleteTask(column.id, task.id)}>
-                                      <Trash2 className="mr-2 h-4 w-4" />
-                                      <span>Удалить</span>
-                                    </DropdownMenuItem>
-                                  </DropdownMenuContent>
-                                </DropdownMenu>
+                                <MoreVertical size={16} className="text-gray-400" />
                               </div>
                             </div>
                           )}
@@ -415,9 +322,7 @@ export default function KanbanBoard() {
                       </div>
                     </div>
                     <DialogFooter>
-                      <Button onClick={addTask} className="bg-green-500 text-white hover:bg-green-600">
-                        Добавить задачу
-                      </Button>
+                      <Button onClick={addTask} className="bg-green-500 text-white hover:bg-green-600">Добавить задачу</Button>
                     </DialogFooter>
                   </DialogContent>
                 </Dialog>
@@ -429,3 +334,4 @@ export default function KanbanBoard() {
     </div>
   );
 }
+
