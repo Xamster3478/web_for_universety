@@ -22,7 +22,6 @@ async function createTask(description, completed) {
     }
 
     const data = await response.json();
-    console.log('Задача создана:', data);
     return data;
   } catch (error) {
     console.error('Ошибка:', error);
@@ -45,7 +44,6 @@ async function getTasks() {
     }
 
     const data = await response.json();
-    console.log('Полученные задачи:', data.tasks);
     return data.tasks;
   } catch (error) {
     console.error('Ошибка:', error);
@@ -68,7 +66,6 @@ async function deleteTask(taskId) {
     }
 
     const data = await response.json();
-    console.log('Задача удалена:', data);
     return data;
   } catch (error) {
     console.error('Ошибка:', error);
@@ -95,7 +92,6 @@ async function updateTask(taskId, description, completed) {
     }
 
     const data = await response.json();
-    console.log('Задача обновлена:', data);
     return data;
   } catch (error) {
     console.error('Ошибка:', error);
@@ -155,13 +151,11 @@ export default function TodoList() {
   const toggleTodo = async (id) => {
     const todo = todos.find(todo => todo.id === id);
     if (todo) {
-      console.log(`Обновление задачи: ${id}, текущее состояние: ${todo.completed}`);
       const updatedTask = await updateTask(id, todo.text, !todo.completed);
       if (updatedTask) {
         setTodos(todos.map(todo => 
           todo.id === id ? { ...todo, completed: !todo.completed } : todo
         ));
-        console.log(`Задача ${id} обновлена, новое состояние: ${!todo.completed}`);
       }
     }
   };

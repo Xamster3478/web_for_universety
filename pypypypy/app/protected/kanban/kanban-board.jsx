@@ -87,11 +87,6 @@ export default function KanbanBoard() {
     if (newDescription.trim() === '') return;
 
     try {
-      console.log('Отправка данных:', {
-        column_id: newColumnId,
-        description: newDescription
-      });
-
       await apiFetch(`/api/kanban/${columnId}/tasks/${taskId}/`, 'PATCH', { 
         column_id: newColumnId,
         description: newDescription
