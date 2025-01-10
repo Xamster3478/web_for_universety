@@ -43,7 +43,6 @@ const Login = () => {
 
             const data = await response.json(); // Получаем данные ответа
             localStorage.setItem('token', data.access_token); // Сохраняем токен
-            console.log('Вход успешен:', data);
             router.push('/protected/task-scheduler'); // Перенаправляем на защищенную страницу
         } catch (error) {
             console.error('Ошибка:', error);

@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { format } from 'date-fns';
+import { Trash2 } from 'lucide-react';
 
 const initialData = [
   { date: '2023-06-01', calories: 2200, water: 2.0 },
@@ -19,7 +20,70 @@ const initialData = [
 ];
 
 export default function NutritionPage() {
-  const [data, setData] = useState(initialData);
+  const getToken = () => {
+    const token = localStorage.getItem('token');
+    return token;
+  };
+
+  const fetchData = async () => {
+    try {
+      const response = await fetch('https://backend-for-uni.onrender.com/api/health/food/', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${getToken()}`,
+        },
+      });
+      if (!response.ok) {
+        throw new Error(`Ошибка: ${response.status} ${response.statusText}`);
+      }
+      const result = await response.json();
+      setData(result.food);
+    } catch (error) {
+      console.error('Ошибка при получении данных:', error);
+    }
+  };
+
+  const addData = async (newEntry) => {
+    try {
+      const response = await fetch('https://backend-for-uni.onrender.com/api/health/food/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${getToken()}`,
+        },
+        body: JSON.stringify(newEntry),
+      });
+      if (response.ok) {
+        fetchData(); // Обновляем данные после добавления
+      } else {
+        const errorData = await response.json();
+        console.error('Ошибка при добавлении данных:', errorData);
+      }
+    } catch (error) {
+      console.error('Ошибка при добавлении данных:', error);
+    }
+  };
+
+  const deleteData = async (nutritionId) => {
+    try {
+      const response = await fetch(`https://backend-for-uni.onrender.com/api/health/food/${nutritionId}/`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${getToken()}`,
+        },
+      });
+      if (response.ok) {
+        fetchData(); // Обновляем данные после удаления
+      } else {
+        const errorData = await response.json();
+        console.error('Ошибка при удалении данных:', errorData);
+      }
+    } catch (error) {
+      console.error('Ошибка при удалении данных:', error);
+    }
+  };
+
+  const [data, setData] = useState([]);
   const [newDate, setNewDate] = useState('');
   const [newCalories, setNewCalories] = useState('');
   const [newWater, setNewWater] = useState('');
@@ -33,12 +97,16 @@ export default function NutritionPage() {
         calories: parseInt(newCalories),
         water: parseFloat(newWater)
       };
-      setData([...data, newEntry]);
+      addData(newEntry);
       setNewDate('');
       setNewCalories('');
       setNewWater('');
     }
   };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
 
   return (
     <div className="space-y-8">
@@ -116,6 +184,7 @@ export default function NutritionPage() {
                   <th className="px-4 py-2 text-left">Дата</th>
                   <th className="px-4 py-2 text-left">Калории</th>
                   <th className="px-4 py-2 text-left">Вода (л)</th>
+                  <th className="px-4 py-2 text-left">Действие</th>
                 </tr>
               </thead>
               <tbody>
@@ -124,6 +193,14 @@ export default function NutritionPage() {
                     <td className="px-4 py-2">{format(new Date(entry.date), 'dd.MM.yyyy')}</td>
                     <td className="px-4 py-2">{entry.calories} ккал</td>
                     <td className="px-4 py-2">{entry.water} л</td>
+                    <td className="px-4 py-2">
+                    <button 
+                        onClick={() => deleteData(entry.id)}
+                        className="text-red-500 hover:text-red-700 hover:cursor-pointer hover:bg-red-100 rounded-full p-1 transition-all duration-300 ease-in-out hover:scale-110 hover:shadow-md"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
