@@ -7,69 +7,74 @@ import { Button } from "@/components/ui/button";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { format } from 'date-fns';
 import { Trash2 } from 'lucide-react';
+import LoadingSpinner from '@/components/loading-spinner';
+
 export default function GlucosePage() {
   const [data, setData] = useState([]);
   const [newDate, setNewDate] = useState('');
   const [newTime, setNewTime] = useState('');
   const [newGlucose, setNewGlucose] = useState('');
-// Функция для получения токена из localStorage
-const getToken = () => {
-  return localStorage.getItem('token'); // Замените 'authToken' на ключ, который вы используете для хранения токена
-};
+  const [isLoading, setIsLoading] = useState(true);
 
-// Функция для получения данных с сервера
-const fetchData = async () => {
-  try {
-    const response = await fetch('https://backend-for-uni.onrender.com/api/health/glucose/', {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${getToken()}`,
-      },
-    });
-    const result = await response.json();
-    setData(result.glucose);
-  } catch (error) {
-    console.error('Ошибка при получении данных:', error);
-  }
-};
+  // Функция для получения токена из localStorage
+  const getToken = () => {
+    return localStorage.getItem('token');
+  };
 
-// Функция для добавления новых данных на сервер
-const addData = async (newEntry) => {
-  try {
-    const response = await fetch('https://backend-for-uni.onrender.com/api/health/glucose/', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${getToken()}`,
-      },
-      body: JSON.stringify(newEntry),
-    });
-    if (response.ok) {
-      fetchData(); // Обновляем данные после добавления
+  // Функция для получения данных с сервера
+  const fetchData = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch('https://backend-for-uni.onrender.com/api/health/glucose/', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${getToken()}`,
+        },
+      });
+      const result = await response.json();
+      setData(result.glucose);
+    } catch (error) {
+      console.error('Ошибка при получении данных:', error);
+    } finally {
+      setIsLoading(false);
     }
-  } catch (error) {
-    console.error('Ошибка при добавлении данных:', error);
-  }
-};
+  };
 
-// Функция для удаления данных с сервера
-const deleteData = async (glucoseId) => {
-  try {
-    const response = await fetch(`https://backend-for-uni.onrender.com/api/health/glucose/${glucoseId}/`, {
-      method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${getToken()}`,
-      },
-    });
-    if (response.ok) {
-      fetchData(); // Обновляем данные после удаления
+  // Функция для добавления новых данных на сервер
+  const addData = async (newEntry) => {
+    try {
+      const response = await fetch('https://backend-for-uni.onrender.com/api/health/glucose/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${getToken()}`,
+        },
+        body: JSON.stringify(newEntry),
+      });
+      if (response.ok) {
+        fetchData(); // Обновляем данные после добавления
+      }
+    } catch (error) {
+      console.error('Ошибка при добавлении данных:', error);
     }
-  } catch (error) {
-    console.error('Ошибка при удалении данных:', error);
-  }
-};
+  };
 
-
+  // Функция для удаления данных с сервера
+  const deleteData = async (glucoseId) => {
+    try {
+      const response = await fetch(`https://backend-for-uni.onrender.com/api/health/glucose/${glucoseId}/`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${getToken()}`,
+        },
+      });
+      if (response.ok) {
+        fetchData(); // Обновляем данные после удаления
+      }
+    } catch (error) {
+      console.error('Ошибка при удалении данных:', error);
+    }
+  };
 
   useEffect(() => {
     fetchData();
@@ -88,6 +93,10 @@ const deleteData = async (glucoseId) => {
       setNewGlucose('');
     }
   };
+
+  if (isLoading) {
+    return <LoadingSpinner />;
+  }
 
   return (
     <div className="space-y-8">
@@ -158,7 +167,7 @@ const deleteData = async (glucoseId) => {
                     <td className="px-4 py-2">{entry.glucose} ммоль/л</td>
                     <td className="px-4 py-2">
                       <button 
-                        onClick={() => deleteData(entry.id)} // Используем id для удаления
+                        onClick={() => deleteData(entry.id)}
                         className="text-red-500 hover:text-red-700 hover:cursor-pointer hover:bg-red-100 rounded-full p-1 transition-all duration-300 ease-in-out hover:scale-110 hover:shadow-md"
                       >
                         <Trash2 size={16} />
@@ -174,4 +183,5 @@ const deleteData = async (glucoseId) => {
     </div>
   );
 }
+
 
