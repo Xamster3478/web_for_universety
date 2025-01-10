@@ -21,6 +21,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import LoadingSpinner from '@/components/loading-spinner';
 
 // Центральная функция для выполнения API запросов
 const apiFetch = async (url, method = 'GET', body = null) => {
@@ -58,8 +59,10 @@ export default function KanbanBoard() {
   const [activeTaskColumn, setActiveTaskColumn] = useState(null);
   const [error, setError] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   const fetchColumnsAndTasks = useCallback(async () => {
+    setIsLoading(true);
     try {
       const data = await apiFetch('/api/kanban/', 'GET');
       const fetchedColumns = {};
@@ -71,6 +74,8 @@ export default function KanbanBoard() {
       setColumns(fetchedColumns);
     } catch (error) {
       setError(error.message);
+    } finally {
+      setIsLoading(false);
     }
   }, []);
 
@@ -254,6 +259,10 @@ export default function KanbanBoard() {
     setIsDragging(true);
   }, []);
 
+  if (isLoading) {
+    return <LoadingSpinner />;
+  }
+
   return (
     <div className="p-4 bg-gray-100 min-h-screen">
       <div className="max-w-7xl mx-auto">
@@ -310,10 +319,10 @@ export default function KanbanBoard() {
                           [column.id]: { ...prev[column.id], title: newTitle },
                         }));
                       }}
-                      onBlur={() => finishEditingColumn(column.id, column.title, column.tasks[0].id, column.tasks[0].description, column.id)}
+                      onBlur={() => finishEditingColumn(column.id, column.title, column.tasks[0]?.id, column.tasks[0]?.description, column.id)}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') {
-                          finishEditingColumn(column.id, column.title, column.tasks[0].id, column.tasks[0].description, column.id);
+                          finishEditingColumn(column.id, column.title, column.tasks[0]?.id, column.tasks[0]?.description, column.id);
                         }
                       }}
                       className="w-full p-2 rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -330,7 +339,7 @@ export default function KanbanBoard() {
                           <Edit2 size={16} />
                         </button>
                         <button 
-                        onClick={() => deleteData(entry.id)} // Используем id для удаления
+                        onClick={() => deleteColumn(column.id)}
                         className="text-red-500 hover:text-red-700 hover:cursor-pointer hover:bg-red-100 rounded-full p-1 transition-all duration-300 ease-in-out hover:scale-110 hover:shadow-md"
                       >
                           <Trash2 size={16} />
