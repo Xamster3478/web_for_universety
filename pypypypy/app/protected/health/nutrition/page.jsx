@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { format } from 'date-fns';
 import { Trash2 } from 'lucide-react';
+import LoadingSpinner from '@/components/loading-spinner';
 
 const initialData = [
   { date: '2023-06-01', calories: 2200, water: 2.0 },
@@ -40,6 +41,8 @@ export default function NutritionPage() {
       setData(result.food);
     } catch (error) {
       console.error('Ошибка при получении данных:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -88,6 +91,7 @@ export default function NutritionPage() {
   const [newCalories, setNewCalories] = useState('');
   const [newWater, setNewWater] = useState('');
   const [chartType, setChartType] = useState('calories');
+  const [isLoading, setIsLoading] = useState(true);
 
   const handleAddData = (e) => {
     e.preventDefault();
@@ -107,6 +111,11 @@ export default function NutritionPage() {
   useEffect(() => {
     fetchData();
   }, []);
+
+
+  if (isLoading) {
+    return <LoadingSpinner />;
+  }
 
   return (
     <div className="space-y-8">
