@@ -3,13 +3,14 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { Home, CheckSquare, ChevronDown, Menu, X } from 'lucide-react';
+import { Home, CheckSquare, ChevronDown, Menu, X, Heart, Droplet, Utensils, Activity } from 'lucide-react';
 import { useMediaQuery } from 'react-responsive';
 
 const ProtectedLayout = ({ children }) => {
   const [user, setUser] = useState(null);
   const [isNavOpen, setIsNavOpen] = useState(false);
   const [isTasksOpen, setIsTasksOpen] = useState(false);
+  const [isHealthOpen, setIsHealthOpen] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
   const isDesktop = useMediaQuery({ minWidth: 768 });
@@ -63,6 +64,18 @@ const ProtectedLayout = ({ children }) => {
     }
   };
 
+  const handleHealthToggle = () => {
+    if (!isDesktop) {
+      setIsHealthOpen(!isHealthOpen);
+    }
+  };
+
+  const handleHealthHover = (open) => {
+    if (isDesktop) {
+      setIsHealthOpen(open);
+    }
+  };
+
   if (!user) {
     return (
       <div className="flex justify-center items-center h-screen">
@@ -98,7 +111,7 @@ const ProtectedLayout = ({ children }) => {
           )}
         </div>
         <nav className="mt-4">
-          <Link href="/protected" className={`flex items-center px-4 py-2 text-gray-700 hover:bg-gray-200 ${pathname === '/' ? 'bg-gray-200' : ''}`}>
+          <Link href="/protected" className={`flex items-center px-4 py-2 text-gray-700 hover:bg-gray-200 ${pathname === '/protected' ? 'bg-gray-200' : ''}`}>
             <Home className="mr-2" size={20} />
             Главная
           </Link>
@@ -124,11 +137,47 @@ const ProtectedLayout = ({ children }) => {
                 isTasksOpen ? 'max-h-40' : 'max-h-0'
               }`}
             >
-              <Link href="task-scheduler" className={`flex items-center px-4 py-2 text-gray-700 hover:bg-gray-200 ${pathname === '/todo' ? 'bg-gray-200' : ''}`}>
+              <Link href="/protected/task-scheduler" className={`flex items-center px-4 py-2 text-gray-700 hover:bg-gray-200 ${pathname === '/protected/task-scheduler' ? 'bg-gray-200' : ''}`}>
                 To-Do List
               </Link>
-              <Link href="kanban" className={`flex items-center px-4 py-2 text-gray-700 hover:bg-gray-200 ${pathname === '/kanban' ? 'bg-gray-200' : ''}`}>
+              <Link href="/protected/kanban" className={`flex items-center px-4 py-2 text-gray-700 hover:bg-gray-200 ${pathname === '/protected/kanban' ? 'bg-gray-200' : ''}`}>
                 Kanban Доска
+              </Link>
+            </div>
+          </div>
+          <div
+            onMouseEnter={() => handleHealthHover(true)}
+            onMouseLeave={() => handleHealthHover(false)}
+          >
+            <button
+              onClick={handleHealthToggle}
+              className="flex items-center justify-between w-full px-4 py-2 text-gray-700 hover:bg-gray-200"
+            >
+              <div className="flex items-center">
+                <Heart className="mr-2" size={20} />
+                Здоровье
+              </div>
+              <ChevronDown
+                size={20}
+                className={`transform transition-transform ${isHealthOpen ? 'rotate-180' : ''}`}
+              />
+            </button>
+            <div
+              className={`ml-4 overflow-hidden transition-all duration-300 ease-in-out ${
+                isHealthOpen ? 'max-h-40' : 'max-h-0'
+              }`}
+            >
+              <Link href="/protected/health/glucose" className={`flex items-center px-4 py-2 text-gray-700 hover:bg-gray-200 ${pathname === '/protected/health/glucose' ? 'bg-gray-200' : ''}`}>
+                <Droplet className="mr-2" size={16} />
+                Глюкоза
+              </Link>
+              <Link href="/protected/health/nutrition" className={`flex items-center px-4 py-2 text-gray-700 hover:bg-gray-200 ${pathname === '/protected/health/nutrition' ? 'bg-gray-200' : ''}`}>
+                <Utensils className="mr-2" size={16} />
+                Питание
+              </Link>
+              <Link href="/protected/health/activity" className={`flex items-center px-4 py-2 text-gray-700 hover:bg-gray-200 ${pathname === '/protected/health/activity' ? 'bg-gray-200' : ''}`}>
+                <Activity className="mr-2" size={16} />
+                Активность
               </Link>
             </div>
           </div>
@@ -142,7 +191,12 @@ const ProtectedLayout = ({ children }) => {
           <div className="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
-              {pathname === '/protected' ? 'Главная' : pathname === '/protected/task-scheduler' ? 'To-Do List' : 'Kanban Доска'}
+                {pathname === '/protected' ? 'Главная' : 
+                 pathname === '/protected/task-scheduler' ? 'To-Do List' : 
+                 pathname === '/protected/kanban' ? 'Kanban Доска' : 
+                 pathname === '/protected/health/glucose' ? 'Глюкоза' :
+                 pathname === '/protected/health/nutrition' ? 'Питание' :
+                 pathname === '/protected/health/activity' ? 'Активность' : ''}
               </h2>
               {!isDesktop && (
                 <button onClick={toggleNav} className="md:hidden">
