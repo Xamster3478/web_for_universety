@@ -70,7 +70,7 @@ export default function StoragePage() {
       });
       const result = await response.json();
       setFiles(result.file.map(file => {
-        const [name, type] = file.split(' ');
+        const [name, type] = file.split('|');
         console.log(name, type);
         return { name, type };
       }));
