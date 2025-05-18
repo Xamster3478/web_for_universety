@@ -24,7 +24,7 @@
 1. Клонируйте репозиторий:
 
    ```bash
-   git clone https://github.com/ваш-репозиторий.git
+   git clone https://github.com/web_for_universety
    ```
 
 2. Перейдите в директорию проекта:
